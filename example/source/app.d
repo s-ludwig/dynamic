@@ -7,7 +7,7 @@ mixin dynamicBinding!foo_binding _foo;
 void main()
 {
 	version(Windows) enum libs = ["foo/foo.dll"];
-	else version (OSX) enum libs = ["foo/foo.dynlib"];
+	else version (OSX) enum libs = ["foo/libfoo.so"];
 	else enum libs = ["foo/libfoo.so"];
 	_foo.loadBinding(libs);
 
