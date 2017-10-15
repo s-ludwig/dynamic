@@ -22,9 +22,13 @@ mixin template dynamicBinding(alias mod)
 	void loadBinding(scope string[] library_files)
 	{
 		import std.format : format;
+		import std.string : toStringz;
+		version (Windows) import windows.windows;
+		else import core.sys.posix.dlfcn : dlopen, RTLD_LAZY;
 
 		foreach (f; library_files) {
-			auto lib = Runtime.loadLibrary(f);
+			version (Windows) void* lib = LoadLibraryW(f.to!wstring.toStringz);
+			else void* lib = dlopen(f.toStringz(), RTLD_LAZY);
 			if (!lib) continue;
 
 			foreach (proto; prototypes!mod) {
@@ -67,9 +71,8 @@ void* loadProc(void* lib, string name)
 	version (Windows) {
 		import core.sys.windows.windows;
 		return GetProcAddress(lib, name.toStringz());
-	} else version (OSX) {
-		return dlsym(lib, name.toStringz());
 	} else {
+		import core.sys.posix.dlfcn : dlsym;
 		return dlsym(lib, name.toStringz());
 	}
 }

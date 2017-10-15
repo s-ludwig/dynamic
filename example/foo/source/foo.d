@@ -2,9 +2,9 @@ module foo;
 
 export extern(C) void foo()
 {
-	import std.stdio : writefln;
+	import core.stdc.stdio;
 
-	writefln("Hello, World!");
+	printf("Hello, World!\n");
 }
 
 version (Windows) {

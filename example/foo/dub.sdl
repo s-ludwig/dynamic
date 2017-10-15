@@ -1,3 +1,7 @@
 name "foo"
 targetType "dynamicLibrary"
 targetName "foo"
+
+// Avoid the Phobos dependency, as that requires the Phobos .so to be installed
+// in the system
+dflags "-betterC" "-defaultlib=" platform="posix"
