@@ -1,0 +1,6 @@
+name "dynamic"
+description "Generates dynamic bindings from static bindings at compile time"
+authors "Sönke Ludwig"
+copyright "Copyright © 2017, Sönke Ludwig"
+license "MIT"
+targetType "library"

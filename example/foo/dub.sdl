@@ -1,0 +1,3 @@
+name "foo"
+targetType "dynamicLibrary"
+targetName "foo"

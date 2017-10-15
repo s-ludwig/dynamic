@@ -1,0 +1,17 @@
+.dub
+docs.json
+__dummy.html
+docs/
+dynamic.so
+dynamic.dylib
+dynamic.dll
+dynamic.a
+dynamic.lib
+dynamic-test-*
+*.exe
+*.o
+*.obj
+*.lst
+*.dll
+*.so
+*.dynlib
