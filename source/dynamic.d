@@ -7,27 +7,26 @@ mixin template dynamicBinding(alias mod)
 	import std.format : format;
 
 	static foreach (proto; prototypes!mod) {
-		alias R = ReturnType!proto;
-		alias P = ParameterTypeTuple!proto;
 		mixin(q{
-				extern(%2$s) alias P_%1$s = R function(P);
-				P_%1$s p_%1$s;
-				extern(%2$s) R %1$s(P params) {
-					assert(p_%1$s !is null, "Function not loaded: %1$s");
-					return p_%1$s(params);
-				}
+			extern(%2$s) alias P_%1$s = ReturnType!proto function(ParameterTypeTuple!proto);
+			P_%1$s p_%1$s;
+			extern(%2$s) ReturnType!proto %1$s(ParameterTypeTuple!proto params) {
+				assert(p_%1$s !is null, "Function not loaded: %1$s");
+				return p_%1$s(params);
+			}
 		}.format(__traits(identifier, proto), functionLinkage!proto));
 	}
 
 	void loadBinding(scope string[] library_files)
 	{
+		import std.conv : to;
 		import std.format : format;
-		import std.string : toStringz;
-		version (Windows) import windows.windows;
+		import std.utf : toUTF16z;
+		version (Windows) import core.sys.windows.windows : LoadLibraryW;
 		else import core.sys.posix.dlfcn : dlopen, RTLD_LAZY;
 
 		foreach (f; library_files) {
-			version (Windows) void* lib = LoadLibraryW(f.to!wstring.toStringz);
+			version (Windows) void* lib = LoadLibraryW(f.toUTF16z);
 			else void* lib = dlopen(f.toStringz(), RTLD_LAZY);
 			if (!lib) continue;
 
@@ -36,7 +35,7 @@ mixin template dynamicBinding(alias mod)
 					p_%1$s = cast(P_%1$s)loadProc(lib, proto.mangleof);
 					if (!p_%1$s)
 						throw new Exception(
-							format("Failed to load function '%s' from %1$s",
+							format("Failed to load function '%%s' from %1$s",
 							proto.mangleof));
 				}.format(__traits(identifier, proto)));
 			}
