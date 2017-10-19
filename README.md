@@ -7,9 +7,40 @@ that works based on plain static bindings consisting of - typically
 used to either link statically against a library, or to load the library at
 runtime.
 
-
 Example
 -------
+
+```
+import std.stdio : writefln;
+import deimos.zmq.zmq;
+import dynamic;
+
+// generates the trampoline functions that forward to
+// the API entry points loaded at runtime
+mixin dynamicBinding!(deimos.zmq.zmq) _zmq;
+
+void main()
+{
+	// load all API functions from the shared library
+	version (Windows) enum libs = ["zmq.dll"];
+	else enum libs = ["libzmq.so"];
+	_zmq.loadBinding(libs);
+
+	// start to use the API as usual
+	auto context = zmq_ctx_new();
+	auto sock = zmq_socket(context, ZMQ_REP);
+	int rc = zmq_bind(sock, "tcp://*:5555");
+	assert(rc == 0);
+
+	ubyte[10] buf;
+	auto len = zmq_recv(sock, buf.ptr, buf.length, 0);
+	writefln(Received: %s", buf[0 .. len]);
+}
+```
+
+
+Testing the included example project
+------------------------------------
 
 First, build the example library:
 
