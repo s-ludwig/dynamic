@@ -22,6 +22,7 @@ mixin template dynamicBinding(alias mod)
 		import std.conv : to;
 		import std.format : format;
 		import std.utf : toUTF16z;
+		import std.string : toStringz;
 		version (Windows) import core.sys.windows.windows : LoadLibraryW;
 		else import core.sys.posix.dlfcn : dlopen, RTLD_LAZY;
 
