@@ -6,16 +6,22 @@ mixin template dynamicBinding(alias mod)
 	import std.traits : ReturnType, ParameterTypeTuple, functionLinkage;
 	import std.format : format;
 
-	static foreach (proto; prototypes!mod) {
-		mixin(q{
-			extern(%2$s) alias P_%1$s = ReturnType!proto function(ParameterTypeTuple!proto);
-			P_%1$s p_%1$s;
-			extern(%2$s) ReturnType!proto %1$s(ParameterTypeTuple!proto params) {
-				assert(p_%1$s !is null, "Function not loaded: %1$s");
-				return p_%1$s(params);
-			}
-		}.format(__traits(identifier, proto), functionLinkage!proto));
+	private static string mixins()
+	{
+		string ret;
+		foreach (proto; prototypes!mod) {
+			ret ~= q{
+				extern(%2$s) alias P_%1$s = ReturnType!proto function(ParameterTypeTuple!proto);
+				P_%1$s p_%1$s;
+				extern(%2$s) ReturnType!proto %1$s(ParameterTypeTuple!proto params) {
+					assert(p_%1$s !is null, "Function not loaded: %1$s");
+					return p_%1$s(params);
+				}
+			}.format(__traits(identifier, proto), functionLinkage!proto);
+		}
+		return ret;
 	}
+	mixin(mixins());
 
 	void loadBinding(scope string[] library_files)
 	{
