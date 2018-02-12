@@ -1,12 +1,14 @@
 module dynamic;
 
-mixin template dynamicBinding(alias mod)
+enum SymbolSet { all, skipDeprecated }
+
+mixin template dynamicBinding(alias mod, SymbolSet symbols = SymbolSet.all)
 {
 	import core.runtime : Runtime;
 	import std.traits : ReturnType, ParameterTypeTuple, functionLinkage;
 	import std.format : format;
 
-	alias _prototypes = prototypes!mod;
+	alias _prototypes = prototypes!(mod, symbols);
 
 	private static string mixins()
 	{
@@ -39,7 +41,7 @@ mixin template dynamicBinding(alias mod)
 			else void* lib = dlopen(f.toStringz(), RTLD_LAZY);
 			if (!lib) continue;
 
-			foreach (proto; prototypes!mod) {
+			foreach (proto; _prototypes) {
 				mixin(q{
 					p_%1$s = cast(P_%1$s)loadProc(lib, proto.mangleof);
 					if (!p_%1$s)
@@ -56,11 +58,16 @@ mixin template dynamicBinding(alias mod)
 }
 
 /// private
-template prototypes(alias mod)
+template prototypes(alias mod, SymbolSet symbols)
 {
 	import std.meta : AliasSeq, staticMap;
 
-	alias Overloads(string name) = AliasSeq!(__traits(getOverloads, mod, name));
+	template Overloads(string name) {
+		static if (symbols == SymbolSet.skipDeprecated && isDeprecated!(mod, name))
+			alias Overloads = AliasSeq!();
+		else
+			alias Overloads = AliasSeq!(__traits(getOverloads, mod, name));
+	}
 	alias functions = staticMap!(Overloads, AliasSeq!(__traits(allMembers, mod)));
 
 	/*template impl(size_t idx) {
@@ -70,6 +77,12 @@ template prototypes(alias mod)
 	}*/
 	alias prototypes = functions;
 }
+
+// crude workaround to gag deprecation warnings
+private enum isDeprecated(alias parent, string symbol) =
+	is(typeof({
+		static assert(__traits(isDeprecated, __traits(getMember, parent, symbol)));
+	}));
 
 /// private
 void* loadProc(void* lib, string name)
