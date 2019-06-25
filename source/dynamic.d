@@ -80,8 +80,8 @@ template prototypes(alias mod, SymbolSet symbols)
 
 // crude workaround to gag deprecation warnings
 private enum isDeprecated(alias parent, string symbol) =
-	__traits(compiles, {
-		static assert(__traits(isDeprecated, __traits(getMember, parent, symbol)));
+	!__traits(compiles, {
+		static assert(!__traits(isDeprecated, __traits(getMember, parent, symbol)));
 	});
 
 /// private
