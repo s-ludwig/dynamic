@@ -14,14 +14,17 @@ mixin template dynamicBinding(alias mod, SymbolSet symbols = SymbolSet.all)
 	{
 		string ret;
 		foreach (i, proto; _prototypes) {
+			enum varsuffix = __traits(getFunctionVariadicStyle, proto) == "none"
+				? "" : ", ...";
+
 			ret ~= q{
 				extern(%2$s) alias P_%1$s = ReturnType!(_prototypes[%3$d]) function(ParameterTypeTuple!(_prototypes[%3$d]));
 				P_%1$s p_%1$s;
-				extern(%2$s) ReturnType!(_prototypes[%3$d]) %1$s(ParameterTypeTuple!(_prototypes[%3$d]) params) {
+				extern(%2$s) ReturnType!(_prototypes[%3$d]) %1$s(ParameterTypeTuple!(_prototypes[%3$d]) params%4$s) {
 					assert(p_%1$s !is null, "Function not loaded: %1$s");
 					return p_%1$s(params);
 				}
-			}.format(__traits(identifier, proto), functionLinkage!proto, i);
+			}.format(__traits(identifier, proto), functionLinkage!proto, i, varsuffix);
 		}
 		return ret;
 	}
