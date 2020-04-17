@@ -18,13 +18,15 @@ mixin template dynamicBinding(alias mod, SymbolSet symbols = SymbolSet.all)
 				? "" : ", ...";
 
 			ret ~= q{
-				extern(%2$s) alias P_%1$s = ReturnType!(_prototypes[%3$d]) function(ParameterTypeTuple!(_prototypes[%3$d]));
+				extern(%2$s) alias P_%1$s = ReturnType!(_prototypes[%3$d]) function(ParameterTypeTuple!(_prototypes[%3$d])) %5$-(%s %);
 				P_%1$s p_%1$s;
-				extern(%2$s) ReturnType!(_prototypes[%3$d]) %1$s(ParameterTypeTuple!(_prototypes[%3$d]) params%4$s) {
+				extern(%2$s) ReturnType!(_prototypes[%3$d]) %1$s(ParameterTypeTuple!(_prototypes[%3$d]) params%4$s)
+				%5$-(%s %) {
 					assert(p_%1$s !is null, "Function not loaded: %1$s");
 					return p_%1$s(params);
 				}
-			}.format(__traits(identifier, proto), functionLinkage!proto, i, varsuffix);
+			}.format(__traits(identifier, proto), functionLinkage!proto, i,
+				varsuffix, [__traits(getFunctionAttributes, proto)]);
 		}
 		return ret;
 	}
