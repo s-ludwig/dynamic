@@ -5,32 +5,21 @@ enum SymbolSet { all, skipDeprecated }
 mixin template dynamicBinding(alias mod, SymbolSet symbols = SymbolSet.all)
 {
 	import core.runtime : Runtime;
+	import std.array : join;
 	import std.traits : ReturnType, ParameterTypeTuple, functionLinkage;
-	import std.format : format;
 
 	alias _prototypes = prototypes!(mod, symbols);
+	private enum _id(alias p) = __traits(identifier, p);
 
-	private static string mixins()
-	{
-		string ret;
-		foreach (i, proto; _prototypes) {
-			enum varsuffix = __traits(getFunctionVariadicStyle, proto) == "none"
-				? "" : ", ...";
-
-			ret ~= q{
-				extern(%2$s) alias P_%1$s = ReturnType!(_prototypes[%3$d]) function(ParameterTypeTuple!(_prototypes[%3$d])) %5$-(%s %);
-				P_%1$s p_%1$s;
-				extern(%2$s) ReturnType!(_prototypes[%3$d]) %1$s(ParameterTypeTuple!(_prototypes[%3$d]) params%4$s)
-				%5$-(%s %) {
-					assert(p_%1$s !is null, "Function not loaded: %1$s");
-					return p_%1$s(params);
-				}
-			}.format(__traits(identifier, proto), functionLinkage!proto, i,
-				varsuffix, [__traits(getFunctionAttributes, proto)]);
-		}
-		return ret;
+	static foreach (i, proto; _prototypes) {
+		mixin("extern("~functionLinkage!proto~") alias P_"~_id!proto~" = ReturnType!proto function(ParameterTypeTuple!proto) " ~ join([__traits(getFunctionAttributes, proto)], " ") ~ ";");
+		mixin("P_"~_id!proto~" p_"~_id!proto~";");
+		mixin("extern("~functionLinkage!proto~") ReturnType!proto "~_id!proto~"(ParameterTypeTuple!proto params"~(__traits(getFunctionVariadicStyle, proto) == "none"
+				? "" : ", ...")~") "~join([__traits(getFunctionAttributes, proto)], " ")~" {\n"
+			~ "  assert(p_"~_id!proto~" !is null, \"Function not loaded: "~_id!proto~"\");\n"
+			~ "  return p_"~_id!proto~"(params);\n"
+			~ "}");
 	}
-	mixin(mixins());
 
 	void loadBinding(scope string[] library_files)
 	{
@@ -47,13 +36,10 @@ mixin template dynamicBinding(alias mod, SymbolSet symbols = SymbolSet.all)
 			if (!lib) continue;
 
 			foreach (proto; _prototypes) {
-				mixin(q{
-					p_%1$s = cast(P_%1$s)loadProc(lib, proto.mangleof);
-					if (!p_%1$s)
-						throw new Exception(
-							format("Failed to load function '%%s' from %1$s",
-							proto.mangleof));
-				}.format(__traits(identifier, proto)));
+				enum ident = __traits(identifier, proto);
+				mixin("p_"~ident) = cast(typeof(mixin("p_"~ident)))loadProc(lib, proto.mangleof);
+				if (!mixin("p_"~ident))
+					throw new Exception("Failed to load function '"~proto.mangleof~"' from " ~ f);
 			}
 			return;
 		}
