@@ -2,6 +2,36 @@ module dynamic;
 
 enum SymbolSet { all, skipDeprecated }
 
+
+/** Declares a dynamically linked library binding.
+
+	Params:
+		mod = Alias of a module that contains a static binding consisting of
+			function prototypes
+		symbols = Optionally disables binding of deprecated symbols
+
+	Example:
+		---
+		import dynamic;
+
+		import my_c_library : myCLibFunction;
+
+		// define the dynamic binding
+		dynamicBinding!my_c_library myCLibBinding;
+
+		void main()
+		{
+			// load the actual symbols from the dynamic library
+			version (Windows) myCLibBinding.loadBinding(["myclib.dll"]);
+			else version (OSX) myCLibBinding.loadBinding(["libmyclib.dylib"]);
+			else myCLibBinding.loadBinding(["libmyclib.so", "libmyclib.so.1"]);
+
+			// now we can call a function from `my_c_library` as if it were a
+			// simple statically linked function:
+			myCLibFunction();
+		}
+		---
+*/
 mixin template dynamicBinding(alias mod, SymbolSet symbols = SymbolSet.all)
 {
 	import core.runtime : Runtime;
