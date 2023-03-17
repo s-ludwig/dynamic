@@ -22,9 +22,9 @@ enum SymbolSet { all, skipDeprecated }
 		void main()
 		{
 			// load the actual symbols from the dynamic library
-			version (Windows) myCLibBinding.loadBinding(["myclib.dll"]);
-			else version (OSX) myCLibBinding.loadBinding(["libmyclib.dylib"]);
-			else myCLibBinding.loadBinding(["libmyclib.so", "libmyclib.so.1"]);
+			version (Windows) myCLibBinding.loadBinding("myclib.dll");
+			else version (OSX) myCLibBinding.loadBinding("libmyclib.dylib");
+			else myCLibBinding.loadBinding("libmyclib.so", "libmyclib.so.1");
 
 			// now we can call a function from `my_c_library` as if it were a
 			// simple statically linked function:
@@ -51,7 +51,7 @@ mixin template dynamicBinding(alias mod, SymbolSet symbols = SymbolSet.all)
 			~ "}");
 	}
 
-	void loadBinding(scope string[] library_files)
+	void loadBinding(scope string[] library_files...)
 	{
 		import std.conv : to;
 		import std.format : format;
